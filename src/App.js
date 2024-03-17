@@ -1,12 +1,15 @@
 import './App.css';
 import React, { useEffect, useReducer } from 'react';
 // import { API } from 'aws-amplify';
-import { List } from 'antd';
+import { List, Input, Button } from 'antd';
 import 'antd/dist/reset.css';
 import { listNotes } from './graphql/queries';
 import { generateClient } from 'aws-amplify/api';
+import { v4 as uuid } from 'uuid';
+import { createNote as CreateNote } from './graphql/mutations';
 
 const client = generateClient();
+
 
 const initialState = {
   notes: [],

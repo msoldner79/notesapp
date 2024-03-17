@@ -10,6 +10,7 @@ import { createNote as CreateNote } from './graphql/mutations';
 
 const client = generateClient();
 
+const CLIENT_ID = uuid();
 
 const initialState = {
   notes: [],
@@ -22,6 +23,12 @@ function reducer(state, action) {
   switch (action.type) {
     case 'SET_NOTES':
       return { ...state, notes: action.notes, loading: false };
+    case 'ADD_NOTE':
+      return { ...state, notes: [action.note, ...state.notes] };
+    case 'RESET_FORM':
+      return { ...state, form: initialState.form };
+    case 'SET_INPUT':
+      return { ...state, form: { ...state.form, [action.name]: action.value } };
     case 'ERROR':
       return { ...state, loading: false, error: true };
     default:
@@ -43,6 +50,33 @@ const App = () => {
       dispatch({ type: 'ERROR' });
     }
   };
+
+  const createNote = async () => {
+    const { form } = state //destructuring form element out of the state. 
+
+    if (!form.name || !form.description) {
+      return alert('please enter a name and description')
+    }
+
+    const note = { ...form, clientID: CLIENT_ID, completed: false, id: uuid() }
+    dispatch({ type: 'ADD_NOTE', note });
+    dispatch({ type: 'RESET_FORM' });
+    // console.log(note)
+    try {
+      await client.graphql({
+        query: CreateNote,
+        variables: { input: note }
+      })
+      console.log('successfully created note!')
+    } catch (err) {
+      console.error(err)
+    }
+  };
+
+  const onChange = (e) => {
+    dispatch({ type: 'SET_INPUT', name: e.target.name, value: e.target.value });
+  };
+
   useEffect(() => {
     fetchNotes();
   }, []);
@@ -68,6 +102,24 @@ const App = () => {
 
   return (
     <div style={styles.container}>
+      <Input
+        onChange={onChange}
+        value={state.form.name}
+        placeholder="Note Name"
+        name='name'
+        style={styles.input}
+      />
+      <Input
+        onChange={onChange}
+        value={state.form.description}
+        placeholder="Note description"
+        name='description'
+        style={styles.input}
+      />
+      <Button
+        onClick={createNote}
+        type="primary"
+      >Create Note</Button>
       <List
         loading={state.loading}
         dataSource={state.notes}

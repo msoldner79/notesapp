@@ -136,7 +136,7 @@ const App = () => {
     container: { padding: 20 },
     input: { marginBottom: 10 },
     item: { textAlign: 'left' },
-    p: { color: '#1890ff' }
+    p: { color: '#1890ff' },
   }
 
   function renderItem(item) {
@@ -144,10 +144,10 @@ const App = () => {
       <List.Item
         style={styles.item}
         actions={[
-          <p style={styles.p} onClick={() => deleteNote(item)}>Delete</p>,
-          <p style={styles.p} onClick={() => updateNote(item)}>
-            {item.completed ? 'completed' : 'mark completed'}
-          </p>
+          <button style={styles.p} onClick={() => deleteNote(item)}>Delete</button>,
+          <button style={styles.p} onClick={() => updateNote(item)}>
+            {item.completed ? 'Mark Incomplete' : 'Mark Completed'}
+          </button>
         ]}>
         <List.Item.Meta
           title={item.name}

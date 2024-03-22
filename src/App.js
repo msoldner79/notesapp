@@ -7,13 +7,12 @@ import { listNotes } from './graphql/queries';
 import { generateClient } from 'aws-amplify/api';
 import { v4 as uuid } from 'uuid';
 import {
-createNote as CreateNote,
-deleteNote as DeleteNote
+  createNote as CreateNote,
+  deleteNote as DeleteNote,
+  updateNote as UpdateNote
 }
   from './graphql/mutations';
-
-
-const client = generateClient();
+import { onCreateNote } from './graphql/subscriptions';
 
 const CLIENT_ID = uuid();
 
@@ -29,11 +28,11 @@ function reducer(state, action) {
     case 'SET_NOTES':
       return { ...state, notes: action.notes, loading: false };
     case 'ADD_NOTE':
-      return { ...state, notes: [action.note, ...state.notes] };
+      return { ...state, notes: [action.note, ...state.notes] }
     case 'RESET_FORM':
-      return { ...state, form: initialState.form };
+      return { ...state, form: initialState.form }
     case 'SET_INPUT':
-      return { ...state, form: { ...state.form, [action.name]: action.value } };
+      return { ...state, form: { ...state.form, [action.name]: action.value } }
     case 'ERROR':
       return { ...state, loading: false, error: true };
     default:
@@ -43,6 +42,8 @@ function reducer(state, action) {
 
 const App = () => {
   const [state, dispatch] = useReducer(reducer, initialState);
+
+  const client = generateClient();
 
   const fetchNotes = async () => {
     try {
@@ -57,7 +58,7 @@ const App = () => {
   };
 
   const createNote = async () => {
-    const { form } = state //destructuring form element out of the state. 
+    const { form } = state
 
     if (!form.name || !form.description) {
       return alert('please enter a name and description')
@@ -81,7 +82,7 @@ const App = () => {
   const deleteNote = async ({ id }) => {
     const index = state.notes.findIndex(n => n.id === id)
     const notes = [
-      ...state.notes.slice(0, index), // filter?
+      ...state.notes.slice(0, index), // TODO add a filter?
       ...state.notes.slice(index + 1)];
     dispatch({ type: 'SET_NOTES', notes })
     try {
@@ -95,12 +96,40 @@ const App = () => {
     }
   };
 
+  const updateNote = async (note) => {
+    const index = state.notes.findIndex(n => n.id === note.id)
+    const notes = [...state.notes]
+    notes[index].completed = !note.completed
+    dispatch({ type: 'SET_NOTES', notes })
+    try {
+      await client.graphql({
+        query: UpdateNote,
+        variables: { input: { id: note.id, completed: notes[index].completed } }
+      })
+      console.log('note successfully updated!')
+    } catch (err) {
+      console.errror(err)
+    }
+  };
+
   const onChange = (e) => {
     dispatch({ type: 'SET_INPUT', name: e.target.name, value: e.target.value });
   };
 
   useEffect(() => {
     fetchNotes();
+    const subscription = client.graphql({
+      query: onCreateNote
+    })
+      .subscribe({
+        next: noteData => {
+          console.log(noteData) // added for troublshooting
+          const note = noteData.data.onCreateNote //"value" no longer needed
+          if (CLIENT_ID === note.clientId) return
+          dispatch({ type: 'ADD_NOTE', note })
+        }
+      })
+    return () => subscription.unsubscribe();
   }, []);
 
   const styles = {
@@ -115,7 +144,10 @@ const App = () => {
       <List.Item
         style={styles.item}
         actions={[
-          <p style={styles.p} onClick={() => deleteNote(item)}>Delete</p>
+          <p style={styles.p} onClick={() => deleteNote(item)}>Delete</p>,
+          <p style={styles.p} onClick={() => updateNote(item)}>
+            {item.completed ? 'completed' : 'mark completed'}
+          </p>
         ]}>
         <List.Item.Meta
           title={item.name}

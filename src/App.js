@@ -75,7 +75,7 @@ const App = () => {
       })
       console.log('successfully created note!')
     } catch (err) {
-      console.error(err)
+      console.error("error: ", err)
     }
   };
 
@@ -125,7 +125,7 @@ const App = () => {
         next: noteData => {
           console.log(noteData) // added for troublshooting
           const note = noteData.data.onCreateNote //"value" no longer needed
-          if (CLIENT_ID === note.clientId) return
+          if (CLIENT_ID === note.clientID) return
           dispatch({ type: 'ADD_NOTE', note })
         }
       })

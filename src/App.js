@@ -45,6 +45,45 @@ const App = () => {
 
   const client = generateClient();
 
+  const variables = {
+    filter: {
+      completed: {
+        eq: false
+      }
+    }
+  };
+  const variables2 = {
+    filter: {
+      completed: {
+        eq: true
+      }
+    }
+  };
+
+  const fetchIncompleteNotes = async () => {
+    try {
+      const notesData = await client.graphql({
+        query: listNotes, variables: variables
+      });
+      dispatch({ type: 'SET_NOTES', notes: notesData.data.listNotes.items });
+    } catch (err) {
+      console.error(err);
+      dispatch({ type: 'ERROR' });
+    }
+  };
+
+  const fetchCompletedNotes = async () => {
+    try {
+      const notesData = await client.graphql({
+        query: listNotes, variables: variables2
+      });
+      dispatch({ type: 'SET_NOTES', notes: notesData.data.listNotes.items });
+    } catch (err) {
+      console.error(err);
+      dispatch({ type: 'ERROR' });
+    }
+  };
+
   const fetchNotes = async () => {
     try {
       const notesData = await client.graphql({
@@ -56,6 +95,7 @@ const App = () => {
       dispatch({ type: 'ERROR' });
     }
   };
+
 
   const createNote = async () => {
     const { form } = state
@@ -178,11 +218,25 @@ const App = () => {
         onClick={createNote}
         type="primary"
       >Create Note</Button>
+      <br></br>
+
       <List
         loading={state.loading}
         dataSource={state.notes}
         renderItem={renderItem}
       />
+      <Button
+        onClick={fetchIncompleteNotes}
+        type="primary"
+      >Filter to Incomplete</Button>&nbsp;
+      <Button
+        onClick={fetchCompletedNotes}
+        type="primary"
+      >Filter to Complete</Button>&nbsp;
+      <Button
+        onClick={fetchNotes}
+        type="primary"
+      >Filter to All</Button>
     </div>
   );
 }
